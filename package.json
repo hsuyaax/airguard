@@ -1,0 +1,39 @@
+{
+  "name": "airguard-next",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "^7.0.7",
+    "@deck.gl/core": "^9.1.14",
+    "@deck.gl/layers": "^9.1.14",
+    "@deck.gl/react": "^9.1.14",
+    "@supabase/supabase-js": "^2.100.1",
+    "clsx": "^2.1.1",
+    "deck.gl": "^9.1.14",
+    "leaflet": "^1.9.4",
+    "maplibre-gl": "^5.4.0",
+    "next": "^16.2.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-leaflet": "^5.0.0",
+    "recharts": "^2.15.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.5",
+    "@types/leaflet": "^1.9.16",
+    "@types/node": "^22.15.2",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "eslint": "^9.26.0",
+    "eslint-config-next": "^16.2.1",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^4.1.5",
+    "typescript": "^5.8.3"
+  }
+}
