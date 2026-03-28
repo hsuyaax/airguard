@@ -24,6 +24,7 @@ const ADMIN_NAV = [
   { href: "/dashboard/weather", label: "Weather & Satellite", icon: "wb_sunny" },
   { href: "/dashboard/report", label: "Generate Reports", icon: "summarize" },
   { href: "/dashboard/complaints", label: "Citizen Reports", icon: "campaign" },
+  { href: "/dashboard/models", label: "Model Registry", icon: "hub" },
   { href: "/dashboard/api-docs", label: "API Docs", icon: "integration_instructions" },
 ];
 
@@ -36,6 +37,7 @@ const DEV_NAV = [
   { href: "/dashboard/weather", label: "Weather & Satellite", icon: "wb_sunny" },
   { href: "/dashboard/report", label: "Reports", icon: "summarize" },
   { href: "/dashboard/complaints", label: "Citizen Reports", icon: "campaign" },
+  { href: "/dashboard/models", label: "Model Registry", icon: "hub" },
   { href: "/dashboard/api-docs", label: "API Docs", icon: "integration_instructions" },
   { href: "/dashboard/about", label: "About", icon: "info" },
 ];
