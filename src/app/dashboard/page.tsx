@@ -10,7 +10,6 @@ import { ForecastChart } from "@/components/ForecastChart";
 import { AqiHistogram } from "@/components/AqiHistogram";
 import { getGrapStage, aqiCategory, aqiColor, healthAdvisory, formatSourceName } from "@/lib/aqi";
 import { estimateSources } from "@/lib/demo-data";
-import { saveSnapshot } from "@/lib/history";
 import { useSettings } from "@/lib/settings-context";
 import type { WardData, WardGeoJSON, Station } from "@/lib/types";
 
@@ -35,24 +34,7 @@ export default function CitizenDashboard() {
         setGeoJSON(geo);
         setStations(stns);
         if (wards.length > 0) setSelectedWard(wards[0].ward_name);
-        // Save snapshot for historical trends
-        if (wards.length > 0) {
-          const sorted = [...wards].sort((a, b) => b.aqi - a.aqi);
-          const best = [...wards].sort((a, b) => a.aqi - b.aqi)[0];
-          saveSnapshot({
-            timestamp: new Date().toISOString(),
-            avgAqi: Math.round(wards.reduce((s: number, w: WardData) => s + w.aqi, 0) / wards.length),
-            worstWard: sorted[0]?.ward_name || "",
-            worstAqi: sorted[0]?.aqi || 0,
-            bestWard: best?.ward_name || "",
-            bestAqi: best?.aqi || 0,
-            grapStage: sorted[0]?.aqi > 450 ? 4 : sorted[0]?.aqi > 400 ? 3 : sorted[0]?.aqi > 300 ? 2 : sorted[0]?.aqi > 200 ? 1 : 0,
-            wardCount: wards.length,
-            severeCount: wards.filter((w: WardData) => w.aqi > 400).length,
-            veryPoorCount: wards.filter((w: WardData) => w.aqi > 300 && w.aqi <= 400).length,
-            wardAqiMap: Object.fromEntries(wards.map((w: WardData) => [w.ward_name, w.aqi])),
-          });
-        }
+        // History snapshots are saved to Supabase automatically by /api/wards
         setDataSource(data.source || data.backend || "");
         setLoading(false);
       })

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, BarChart, Bar, Cell } from "recharts";
-import { getHistory, getCityTrend, getWardTrend, type AQISnapshot } from "@/lib/history";
+import { type AQISnapshot } from "@/lib/history";
 import { aqiColor } from "@/lib/aqi";
 import type { WardData } from "@/lib/types";
 
@@ -11,9 +11,10 @@ export default function TrendsPage() {
   const [history, setHistory] = useState<AQISnapshot[]>([]);
   const [selectedWard1, setSelectedWard1] = useState("");
   const [selectedWard2, setSelectedWard2] = useState("");
-  const [timeRange, setTimeRange] = useState<24 | 72 | 168>(168); // hours
+  const [timeRange, setTimeRange] = useState<24 | 72 | 168>(168);
 
   useEffect(() => {
+    // Load wards
     fetch("/api/wards").then((r) => r.json()).then((data) => {
       const wards = data.wardData || data.ward_data || [];
       setWardData(wards);
@@ -22,12 +23,39 @@ export default function TrendsPage() {
         if (wards.length > 1) setSelectedWard2(wards[Math.min(5, wards.length - 1)]?.ward_name || "");
       }
     }).catch(() => {});
-    setHistory(getHistory());
-  }, []);
 
-  const cityTrend = useMemo(() => getCityTrend(timeRange), [timeRange, history]);
-  const ward1Trend = useMemo(() => getWardTrend(selectedWard1, timeRange), [selectedWard1, timeRange, history]);
-  const ward2Trend = useMemo(() => getWardTrend(selectedWard2, timeRange), [selectedWard2, timeRange, history]);
+    // Load history from Supabase
+    fetch(`/api/history?hours=${timeRange}`).then((r) => r.json()).then((data) => {
+      const rows = data.history || [];
+      // Map Supabase rows to AQISnapshot format
+      const mapped: AQISnapshot[] = rows.map((r: Record<string, unknown>) => ({
+        timestamp: r.timestamp as string,
+        avgAqi: r.avg_aqi as number,
+        worstWard: (r.worst_ward || "") as string,
+        worstAqi: (r.worst_aqi || 0) as number,
+        bestWard: (r.best_ward || "") as string,
+        bestAqi: (r.best_aqi || 0) as number,
+        grapStage: (r.grap_stage || 0) as number,
+        wardCount: (r.ward_count || 0) as number,
+        severeCount: (r.severe_count || 0) as number,
+        veryPoorCount: (r.very_poor_count || 0) as number,
+        wardAqiMap: {},
+      }));
+      setHistory(mapped);
+    }).catch(() => {});
+  }, [timeRange]);
+
+  // Derive trends from Supabase history
+  const cityTrend = useMemo(() => {
+    const cutoff = Date.now() - timeRange * 3600000;
+    return history
+      .filter((s) => new Date(s.timestamp).getTime() > cutoff)
+      .map((s) => ({ timestamp: s.timestamp, avgAqi: s.avgAqi, severeCount: s.severeCount }));
+  }, [timeRange, history]);
+
+  // Ward-level trends not available from Supabase (no per-ward history stored), show empty
+  const ward1Trend: Array<{ timestamp: string; aqi: number }> = [];
+  const ward2Trend: Array<{ timestamp: string; aqi: number }> = [];
 
   // Current ward AQI distribution for the bar chart
   const categoryDistribution = useMemo(() => {

@@ -19,14 +19,6 @@ interface Complaint {
   timestamp: string;
 }
 
-const STORAGE_KEY = "airguard_complaints";
-
-function loadComplaints(): Complaint[] {
-  if (typeof window === "undefined") return [];
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { return []; }
-}
-function saveComplaints(c: Complaint[]) { localStorage.setItem(STORAGE_KEY, JSON.stringify(c)); }
-
 const SEV = {
   low: { label: "Low", color: "#009966", bg: "#00996612" },
   medium: { label: "Medium", color: "#ff9933", bg: "#ff993312" },
@@ -56,16 +48,43 @@ export default function ComplaintsPage() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const loadComplaints = () => {
+    fetch("/api/complaints").then((r) => r.json()).then((data) => {
+      const list = (data.complaints || []).map((c: Record<string, unknown>) => ({
+        id: String(c.id || c.created_at),
+        ward_name: c.ward_name as string,
+        pollution_type: c.pollution_type as string,
+        severity: (c.severity || "medium") as Complaint["severity"],
+        description: (c.description || "") as string,
+        status: (c.status || "pending") as Complaint["status"],
+        timestamp: (c.created_at || new Date().toISOString()) as string,
+      }));
+      setComplaints(list);
+    }).catch(() => {});
+  };
+
   useEffect(() => {
-    fetch("/api/wards").then((r) => r.json()).then((data) => {
-      const wards = data.wardData || data.ward_data || [];
+    Promise.all([
+      fetch("/api/wards").then((r) => r.json()),
+      fetch("/api/complaints").then((r) => r.json()),
+    ]).then(([wardRes, complaintRes]) => {
+      const wards = wardRes.wardData || wardRes.ward_data || [];
       setWardData(wards);
       if (wards.length > 0) setSelectedWard(wards[0].ward_name);
+
+      const list = (complaintRes.complaints || []).map((c: Record<string, unknown>) => ({
+        id: String(c.id || c.created_at),
+        ward_name: c.ward_name as string,
+        pollution_type: c.pollution_type as string,
+        severity: (c.severity || "medium") as Complaint["severity"],
+        description: (c.description || "") as string,
+        status: (c.status || "pending") as Complaint["status"],
+        timestamp: (c.created_at || new Date().toISOString()) as string,
+      }));
+      setComplaints(list);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
-
-  useEffect(() => { setComplaints(loadComplaints()); }, []);
 
   // Get GPS location
   const getLocation = () => {
@@ -108,12 +127,7 @@ export default function ComplaintsPage() {
       timestamp: new Date().toISOString(),
     };
 
-    // Save locally
-    const updated = [newComplaint, ...complaints];
-    setComplaints(updated);
-    saveComplaints(updated);
-
-    // Also try Supabase
+    // Save to Supabase
     try {
       await fetch("/api/complaints", {
         method: "POST",
@@ -125,7 +139,12 @@ export default function ComplaintsPage() {
           description: description.trim(),
         }),
       });
-    } catch { /* Supabase optional */ }
+      // Reload complaints from Supabase
+      loadComplaints();
+    } catch {
+      // Optimistic local update if Supabase fails
+      setComplaints([newComplaint, ...complaints]);
+    }
 
     setDescription("");
     setPhoto(null);
