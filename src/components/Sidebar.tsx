@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { UserButton } from "@clerk/nextjs";
+import { useSettings } from "@/lib/settings-context";
 
 type ViewMode = "citizen" | "admin" | "dev";
 
@@ -52,8 +53,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const [viewMode, setViewMode] = useState<ViewMode>("dev");
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [modelTier, setModelTier] = useState("standard");
-  const [interpolation, setInterpolation] = useState("idw");
+  const { modelTier, interpolation, setModelTier, setInterpolation } = useSettings();
 
   useEffect(() => {
     const saved = localStorage.getItem("airguard_view_mode") as ViewMode | null;
@@ -129,7 +129,7 @@ export function Sidebar() {
               <div className="bg-white rounded-xl p-3 space-y-3" style={{ border: "1px solid #eceef0" }}>
                 <div>
                   <label className="text-[10px] font-label text-slate-400 uppercase tracking-widest block mb-1.5">Model Tier</label>
-                  <select value={modelTier} onChange={(e) => setModelTier(e.target.value)} className="w-full bg-slate-50 text-xs py-2 px-2.5 rounded-lg focus:outline-none" style={{ border: "none" }}>
+                  <select value={modelTier} onChange={(e) => setModelTier(e.target.value as "standard" | "advanced" | "basic")} className="w-full bg-slate-50 text-xs py-2 px-2.5 rounded-lg focus:outline-none" style={{ border: "none" }}>
                     <option value="standard">Standard (XGBoost/Prophet)</option>
                     <option value="advanced">Advanced (LSTM)</option>
                     <option value="basic">Basic (IDW/Heuristic)</option>
@@ -137,7 +137,7 @@ export function Sidebar() {
                 </div>
                 <div>
                   <label className="text-[10px] font-label text-slate-400 uppercase tracking-widest block mb-1.5">Interpolation</label>
-                  <select value={interpolation} onChange={(e) => setInterpolation(e.target.value)} className="w-full bg-slate-50 text-xs py-2 px-2.5 rounded-lg focus:outline-none" style={{ border: "none" }}>
+                  <select value={interpolation} onChange={(e) => setInterpolation(e.target.value as "idw" | "kriging")} className="w-full bg-slate-50 text-xs py-2 px-2.5 rounded-lg focus:outline-none" style={{ border: "none" }}>
                     <option value="idw">IDW (Fast)</option>
                     <option value="kriging">Kriging (Accurate)</option>
                   </select>

@@ -11,6 +11,7 @@ import { AqiHistogram } from "@/components/AqiHistogram";
 import { getGrapStage, aqiCategory, aqiColor, healthAdvisory, formatSourceName } from "@/lib/aqi";
 import { estimateSources } from "@/lib/demo-data";
 import { saveSnapshot } from "@/lib/history";
+import { useSettings } from "@/lib/settings-context";
 import type { WardData, WardGeoJSON, Station } from "@/lib/types";
 
 export default function CitizenDashboard() {
@@ -19,9 +20,12 @@ export default function CitizenDashboard() {
   const [stations, setStations] = useState<Station[]>([]);
   const [selectedWard, setSelectedWard] = useState("");
   const [loading, setLoading] = useState(true);
+  const [dataSource, setDataSource] = useState("");
+  const { modelTier, interpolation, modelLabel, interpolationLabel } = useSettings();
 
   useEffect(() => {
-    fetch("/api/wards")
+    setLoading(true);
+    fetch(`/api/wards?method=${interpolation}`)
       .then((r) => r.json())
       .then((data) => {
         const wards = data.wardData || data.ward_data || [];
@@ -49,10 +53,11 @@ export default function CitizenDashboard() {
             wardAqiMap: Object.fromEntries(wards.map((w: WardData) => [w.ward_name, w.aqi])),
           });
         }
+        setDataSource(data.source || data.backend || "");
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [interpolation]);
 
   if (loading) {
     return (
@@ -78,6 +83,33 @@ export default function CitizenDashboard() {
 
   return (
     <div className="space-y-8">
+      {/* Active Settings Indicator */}
+      <div className="flex items-center justify-between bg-surface-low rounded-xl px-5 py-3">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-sm text-primary">model_training</span>
+            <span className="font-label text-[10px] text-on-surface-variant uppercase tracking-widest">Model:</span>
+            <span className="font-label text-[10px] font-bold text-primary uppercase tracking-widest">{modelLabel}</span>
+          </div>
+          <div className="w-px h-4 bg-outline-variant" />
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-sm text-primary">grid_on</span>
+            <span className="font-label text-[10px] text-on-surface-variant uppercase tracking-widest">Interpolation:</span>
+            <span className="font-label text-[10px] font-bold text-primary uppercase tracking-widest">{interpolationLabel}</span>
+          </div>
+          {dataSource && (
+            <>
+              <div className="w-px h-4 bg-outline-variant" />
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="font-label text-[10px] text-on-surface-variant uppercase tracking-widest">{dataSource}</span>
+              </div>
+            </>
+          )}
+        </div>
+        <span className="font-label text-[10px] text-slate-400">{wardData.length} wards &bull; {stations.length} stations</span>
+      </div>
+
       {/* Summary Metrics */}
       <section className="grid grid-cols-1 md:grid-cols-4 gap-6 animate-fade-up">
         {/* Delhi Average AQI */}
